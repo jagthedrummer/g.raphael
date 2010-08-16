@@ -28,13 +28,16 @@ Raphael.fn.g.dotchart = function (x, y, width, height, valuesx, valuesy, size, o
         R = [],
         paper = this,
         k = Math.sqrt(top / Math.PI) * 2 / max;
-
+	
+		
     for (var i = 0; i < len; i++) {
         R[i] = Math.min(Math.sqrt(size[i] / Math.PI) * 2 / k, max);
     }
     gutter = Math.max.apply(Math, R.concat(gutter));
     var axis = this.set(),
         maxR = Math.max.apply(Math, R);
+		
+	
     if (opts.axis) {
         var ax = (opts.axis + "").split(/[,\s]+/);
         drawAxis(ax);
@@ -51,12 +54,49 @@ Raphael.fn.g.dotchart = function (x, y, width, height, valuesx, valuesy, size, o
         }
         drawAxis(ax);
         for (var i = 0, ii = ax.length; i < ii; i++) if (ax[i].all) {
-            axis.push(ax[i].all);
+			axis.push(ax[i].all);
         }
         res.axis = axis;
     }
     var kx = (width - gutter * 2) / ((maxx - minx) || 1),
         ky = (height - gutter * 2) / ((maxy - miny) || 1);
+	
+	/*this.rect(
+		gutter,
+		gutter,
+		width - 2*gutter + 2*x,
+		height - 2*gutter + 2*y,
+		5
+	);*/
+	var cols = this.set(),
+		rows = this.set();
+	var xsteps = (opts.axisxstep + 1) || Math.floor((width - 2 * gutter) / 20);
+	var colwidth = (width - 2*gutter + 2*x) / xsteps ;
+	for(var i=0;i<xsteps;i++){
+		var xleft = gutter + i * colwidth;
+		var ytop = gutter;
+		col = this.rect( xleft, ytop, colwidth, height-2*gutter+2*y,5);
+		//col.attr(this.g.shim);
+		col.attr({stroke:'none',opacity:0});
+		cols.push(col);
+	}
+	//console.log("xsteps = " + xsteps);
+	//console.log("colwidth = " + colwidth)
+	//console.log("kx  = " + kx + " and ky = " + ky);
+	//console.log("x  = " + x + " and y = " + y);
+	//console.log("gutter = " + gutter);
+	var ysteps = (opts.axisystep + 1) || Math.floor((height - 2 * gutter) / 20);
+	var rowheight = (height - 2*gutter + 2*y) / ysteps ;
+	for(var i=0;i<ysteps;i++){
+		var ytop = gutter + i * rowheight;
+		var xleft = gutter;
+		row = this.rect( xleft, ytop, width-2*gutter+2*x,rowheight,5);
+		row.attr({stroke:'none',opacity:0});
+		//row.attr(this.g.shim);
+		rows.push(row);
+	}
+	//console.log("rowheight = " + rowheight);
+	
     for (var i = 0, ii = valuesy.length; i < ii; i++) {
         var sym = this.raphael.is(symbol, "array") ? symbol[i] : symbol,
             X = x + gutter + (valuesx[i] - minx) * kx,
@@ -76,13 +116,17 @@ Raphael.fn.g.dotchart = function (x, y, width, height, valuesx, valuesy, size, o
         covers[i].Y = valuesy[i];
         covers[i].value = size[i] || 0;
         covers[i].dot = series[i];
+		covers[i].col = cols[covers[i].X];
+		covers[i].row = rows[ysteps - covers[i].Y];
     }
     res.covers = covers;
     res.series = series;
-    res.push(series, axis, covers);
+	res.cols = cols;
+	res.rows = rows;
+    res.push(cols,rows,series, axis, covers);
     res.hover = function (fin, fout) {
         covers.mouseover(fin).mouseout(fout);
-        return this;
+		return this;
     };
     res.click = function (f) {
         covers.click(f);
